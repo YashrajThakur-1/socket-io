@@ -1,19 +1,32 @@
-const http = require("http");
 const express = require("express");
-const path = require("path");
-const app = express();
-const { Server } = require("socket.io");
-const server = http.createServer(app);
-const io = new Server(server);
+const http = require("http");
+const socketIo = require("socket.io");
 
-// Socket io
+const app = express();
+const server = http.createServer(app);
+const io = socketIo(server);
+const port = 5000;
+
+app.get("/api/message", (req, res) => {
+  res.json({ message: "Hello from the API!" });
+});
+
 io.on("connection", (socket) => {
-  socket.on("user-message", (message) => {
-    io.emit("message", message);
+  console.log("Client connected");
+
+  // Listen for message events from clients
+  socket.on("message", (data) => {
+    console.log("Message from client:", data);
+
+    // Broadcast the message to all clients
+    io.emit("message", data);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Client disconnected");
   });
 });
-app.use(express.static(path.resolve("./public")));
-app.get("/", async (req, res) => {
-  return res.sendFile("/public/index.html");
+
+server.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
 });
-server.listen(9000, () => console.log("Server running on PORT:9000"));
